@@ -1,61 +1,87 @@
-﻿using ClassificadosApi.Models;
+﻿using ClassificadosApi.DTOs;
 using ClassificadosApi.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ClassificadosApi.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ClassificadosController : ControllerBase
-    {
-        private IClassificadoServices _classificadoService;
+namespace ClassificadosApi.Controllers;
 
-        public ClassificadosController(IClassificadoServices classificadoService)
-        {
-            _classificadoService = classificadoService;
-        }
-       
-        [HttpGet]
-        public async Task<ActionResult<IAsyncEnumerable<Classificado>>> GetClassificadosByData()
-        {
-            try
-            {
-                var classificados = await _classificadoService.GetClassificadosByData();
-                return Ok(classificados);
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Could not find classificados");
-            }
-        }
-        [HttpGet("{id:int}", Name = "GetClassificado")]
-        public async Task<ActionResult<Classificado>> GetClassificado(int id)
-        {
-            try
-            {
-                var classificado = await _classificadoService.GetClassificado(id);
-                if (classificado == null)
-                    return NotFound($"Id={id} inesxistente");
-                return Ok(classificado);
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Could not find classificados");
-            }
-        }
-        [HttpPost]
-        public async Task<ActionResult> Create(Classificado classificado)
-        {
-            try
-            {
-                await _classificadoService.CreateClassificado(classificado);
-                return CreatedAtRoute(nameof(GetClassificado), new {id = classificado.Id}, classificado); 
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Could not find classificados");
-            }
-        }
+[Route("api/[controller]")]
+[ApiController]
+public class ClassificadosController : ControllerBase
+{
+    private readonly IClassificadoServices _classificadoService;
+
+    public ClassificadosController(IClassificadoServices classificadoService)
+    {
+        _classificadoService = classificadoService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<ClassificadoResponseDto>>> GetClassificados(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        if (page < 1)
+            return BadRequest("Page must be greater than zero.");
+
+        if (pageSize < 1 || pageSize > 100)
+            return BadRequest("PageSize must be between 1 and 100.");
+
+        var classificados =
+            await _classificadoService.GetClassificadosByData(
+                page,
+                pageSize);
+
+        return Ok(classificados);
+    }
+
+    [HttpGet("{id:int}", Name = "GetClassificado")]
+    public async Task<ActionResult<ClassificadoResponseDto>> GetClassificado(int id)
+    {
+        var classificado =
+            await _classificadoService.GetClassificado(id);
+
+        if (classificado is null)
+            return NotFound();
+
+        return Ok(classificado);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ClassificadoResponseDto>> Create(
+        ClassificadoCreateDto dto)
+    {
+        var classificado =
+            await _classificadoService.CreateClassificado(dto);
+
+        return CreatedAtRoute(
+            nameof(GetClassificado),
+            new { id = classificado.Id },
+            classificado);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<ClassificadoResponseDto>> Update(
+        int id,
+        ClassificadoUpdateDto dto)
+    {
+        var classificado =
+            await _classificadoService.UpdateClassificado(id, dto);
+
+        if (classificado is null)
+            return NotFound();
+
+        return Ok(classificado);
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var deleted =
+            await _classificadoService.DeleteClassificado(id);
+
+        if (!deleted)
+            return NotFound();
+
+        return NoContent();
     }
 }
