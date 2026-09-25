@@ -1,0 +1,26 @@
+{
+  "name": "Classifieds Application",
+
+  "dockerComposeFile": "../docker-compose.yml",
+
+  "service": "app",
+
+  "workspaceFolder": "/workspace",
+
+  "shutdownAction": "stopCompose",
+
+  "forwardPorts": [
+    5041,
+    5000,
+    3000
+  ],
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}
