@@ -30,6 +30,8 @@ services:
     working_dir: /workspace
     command: >
       bash -c "
+      rm -rf obj bin &&
+      dotnet restore &&
       dotnet ef database update &&
       dotnet run --project . --urls http://0.0.0.0:5041
       "

@@ -7,8 +7,8 @@ import { Modal, ModalBody, ModalFooter, ModalHeader, Button } from 'reactstrap';
 
 function App() {
 
-  const baseUrl = `https://localhost:44330/api/classificados`;
-  
+  const baseUrl = `${process.env.REACT_APP_API_URL}/classificados`;
+
   const [data, setData] = useState([]);
   const [modalIncluir, setModalIncluir] = useState(false);
 
@@ -29,31 +29,42 @@ function App() {
       ...classificadoSelecionado, [name]:value
     })
   }
-  
-  const pedidoGet = async()=> {
-    await axios.get(baseUrl)
-    .then(response => {
-      setData(response.data);
-    }).catch(error => {
-      console.log(error);
-    })
-  }
 
-  const pedidoPost = async()=> {
-    delete classificadoSelecionado.id;
-    delete classificadoSelecionado.dataCadastro;
-    await axios.post(baseUrl, classificadoSelecionado)
-    .then(response => {
-      setData(data.concat(response.data));
+  const pedidoGet = async () => {
+    try {
+      const response = await axios.get(baseUrl, {
+        params: {
+          page: 1,
+          pageSize: 20
+        }
+      });
+
+      setData(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const pedidoPost = async () => {
+    try {
+      const payload = {
+        titulo: classificadoSelecionado.titulo,
+        descricao: classificadoSelecionado.descricao
+      };
+
+      const response = await axios.post(baseUrl, payload);
+
+      setData(current => [...current, response.data]);
+
       abrirFecharModalIncluir();
-    }).catch(error => {
-      console.log(error);
-    })
-  }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(()=>{
     pedidoGet();
-  }, [data])
+  }, [])
 
   return (
     <div className="App"> 
