@@ -18,8 +18,8 @@ namespace ClassificadosApi.Services
         {
             var classificado = new Classificado
             {
-                Titulo = dto.Titulo,
-                Descricao = dto.Descricao,
+                Titulo = dto.Titulo.Trim(),
+                Descricao = dto.Descricao.Trim(),
                 DataCadastro = DateTime.UtcNow
             };
             _context.Classificados.Add(classificado);

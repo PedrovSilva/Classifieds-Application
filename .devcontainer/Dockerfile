@@ -8,12 +8,10 @@ RUN apt-get update \
         curl \
         nodejs \
         npm \
-        iputils-ping \
         netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="${PATH}:/root/.dotnet/tools"
 
 EXPOSE 5041
-EXPOSE 5000
 EXPOSE 3000
+
+CMD ["sleep", "infinity"]
