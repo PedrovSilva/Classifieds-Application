@@ -1,57 +1,172 @@
-import { useState } from 'react';
-import {Form, Modal, ModalBody, ModalFooter, ModalHeader} from 'reactstrap';
+import React, { useEffect, useState } from 'react';
+import { Button, Form, Modal } from 'reactstrap';
 
+const initialForm = {
+    titulo: '',
+    descricao: '',
+};
 
-export default function ClassificadoForm({ isOpen, onClose, OnSubmit }) {
-    const [titulo, setTitulo] = useState('');   
-    const [descricao, setDescricao] = useState('');
+export default function ClassificadoForm({
+    isOpen,
+    onClose,
+    onSubmit,
+    classificado = null,
+}) {
+    const [form, setForm] = useState(initialForm);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const isEditing = Boolean(classificado);
 
-        await OnSubmit({ titulo, descricao });
+    useEffect(() => {
+        if (classificado) {
+            setForm({
+                titulo: classificado.titulo ?? '',
+                descricao: classificado.descricao ?? '',
+            });
+        } else {
+            setForm(initialForm);
+        }
+    }, [classificado, isOpen]);
 
-        setTitulo('');
-        setDescricao('');
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+
+        setForm((current) => ({
+            ...current,
+            [name]: value,
+        }));
+    };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        const titulo = form.titulo.trim();
+        const descricao = form.descricao.trim();
+
+        if (titulo.length < 3 || titulo.length > 80) {
+            return;
+        }
+
+        if (descricao.length < 3 || descricao.length > 2500) {
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+
+            await onSubmit({
+                titulo,
+                descricao,
+            });
+
+            setForm(initialForm);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleClose = () => {
+        if (isSubmitting) {
+            return;
+        }
+
+        setForm(initialForm);
+        onClose();
     };
 
     return (
-        <Modal isOpen={isOpen}>
+        <Modal isOpen={isOpen} toggle={handleClose}>
             <Form onSubmit={handleSubmit}>
-                <ModalHeader>Publicar Classificado</ModalHeader>
-                <ModalBody>
-                    <div className="form-group">
-                        <label htmlFor="titulo">Titulo</label>
+                <div className="modal-header">
+                    <h5 className="modal-title">
+                        {isEditing
+                            ? 'Editar Classificado'
+                            : 'Novo Classificado'}
+                    </h5>
+
+                    <button
+                        type="button"
+                        className="btn-close"
+                        onClick={handleClose}
+                        disabled={isSubmitting}
+                    />
+                </div>
+
+                <div className="modal-body">
+                    <div className="mb-3">
+                        <label
+                            htmlFor="titulo"
+                            className="form-label"
+                        >
+                            Título
+                        </label>
+
                         <input
+                            id="titulo"
+                            name="titulo"
                             type="text"
                             className="form-control"
-                            id="titulo"
-                            value={titulo}
-                            onChange={(e) => setTitulo(e.target.value)}
+                            value={form.titulo}
+                            onChange={handleChange}
+                            minLength={3}
+                            maxLength={80}
                             required
                         />
+
+                        <small className="text-muted">
+                            {form.titulo.length}/80
+                        </small>
                     </div>
-                    <br />
-                    <div className="form-group">
-                        <label htmlFor="descricao">Descrição</label>
+
+                    <div className="mb-3">
+                        <label
+                            htmlFor="descricao"
+                            className="form-label"
+                        >
+                            Descrição
+                        </label>
+
                         <textarea
-                            className="form-control"
                             id="descricao"
-                            value={descricao}
-                            onChange={(e) => setDescricao(e.target.value)}
+                            name="descricao"
+                            className="form-control"
+                            rows="5"
+                            value={form.descricao}
+                            onChange={handleChange}
+                            minLength={3}
+                            maxLength={2500}
                             required
                         />
+
+                        <small className="text-muted">
+                            {form.descricao.length}/2500
+                        </small>
                     </div>
-                </ModalBody>
-                <ModalFooter>
-                    <button type="submit" className="btn btn-primary">
-                        Publicar
-                    </button>
-                    <button type="button" className="btn btn-secondary" onClick={onClose}>
+                </div>
+
+                <div className="modal-footer">
+                    <Button
+                        type="button"
+                        color="secondary"
+                        onClick={handleClose}
+                        disabled={isSubmitting}
+                    >
                         Cancelar
-                    </button>
-                </ModalFooter>
-                </Form>
+                    </Button>
+
+                    <Button
+                        type="submit"
+                        color="success"
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting
+                            ? 'Salvando...'
+                            : isEditing
+                                ? 'Salvar alterações'
+                                : 'Criar'}
+                    </Button>
+                </div>
+            </Form>
         </Modal>
     );
 }
