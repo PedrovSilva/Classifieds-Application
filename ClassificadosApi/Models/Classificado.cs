@@ -1,13 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ClassificadosApi.Models
+namespace ClassificadosApi.Models;
+
+public class Classificado
 {
-    public class Classificado
-    {
-        public int Id { get; set; }
-        public string Titulo { get; set; }
-        public string Descricao { get; set; } 
-        public  DateTime DataCadastro { get; set; }
-     
-    }
+    public int Id { get; set; }
+
+    public string Titulo { get; set; } = string.Empty;
+
+    public string Descricao { get; set; } = string.Empty;
+
+    public DateTime DataCadastro { get; set; }
 }
