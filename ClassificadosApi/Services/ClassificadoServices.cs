@@ -43,15 +43,30 @@ namespace ClassificadosApi.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<ClassificadoResponseDto>> GetClassificadosByData(int page, int pageSize)
+        public async Task<PagedResultDto<ClassificadoResponseDto>> GetClassificadosByData(int page, int pageSize)
         {
-            return await _context.Classificados
-                .AsNoTracking()
-                .OrderByDescending(c => c.DataCadastro)
+            var query = _context.Classificados
+            .AsNoTracking()
+            .OrderByDescending(c => c.DataCadastro);
+
+            var totalItems = await query.CountAsync();
+
+            var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(c => new ClassificadoResponseDto(c.Id, c.Titulo, c.Descricao, c.DataCadastro))
                 .ToListAsync();
+
+                var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+            return new PagedResultDto<ClassificadoResponseDto>
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            };
         }
 
         public async Task<ClassificadoResponseDto?> UpdateClassificado(int id, ClassificadoUpdateDto dto)

@@ -6,6 +6,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import {
     Alert,
     Button,
+    Pagination,
+    PaginationItem,
+    PaginationLink,
     Spinner,
 } from 'reactstrap';
 
@@ -21,8 +24,14 @@ import {
     deleteClassificado,
 } from './services/classificadosApi';
 
+const PAGE_SIZE = 10;
+
 export default function App() {
     const [classificados, setClassificados] = useState([]);
+
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
     const [selectedClassificado, setSelectedClassificado] =
         useState(null);
@@ -32,14 +41,20 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const fetchClassificados = useCallback(async () => {
+    const fetchClassificados = useCallback(async (currentPage) => {
         try {
             setLoading(true);
             setError(null);
 
-            const data = await getClassificados(1, 20);
+            const data = await getClassificados(
+                currentPage,
+                PAGE_SIZE
+            );
 
-            setClassificados(data);
+            setClassificados(data.items);
+            setPage(data.page);
+            setTotalPages(data.totalPages);
+            setTotalItems(data.totalItems);
         } catch (error) {
             console.error(error);
 
@@ -52,8 +67,8 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        fetchClassificados();
-    }, [fetchClassificados]);
+        fetchClassificados(page);
+    }, [page, fetchClassificados]);
 
     const handleOpenCreate = () => {
         setSelectedClassificado(null);
@@ -83,7 +98,7 @@ export default function App() {
                 await createClassificado(classificado);
             }
 
-            await fetchClassificados();
+            await fetchClassificados(page);
 
             handleCloseForm();
         } catch (error) {
@@ -113,11 +128,15 @@ export default function App() {
 
             await deleteClassificado(classificado.id);
 
-            setClassificados((current) =>
-                current.filter(
-                    (item) => item.id !== classificado.id
-                )
-            );
+            if (
+                classificados.length === 1 &&
+                page > 1
+            ) {
+                setPage((current) => current - 1);
+                return;
+            }
+
+            await fetchClassificados(page);
         } catch (error) {
             console.error(error);
 
@@ -169,11 +188,76 @@ export default function App() {
                     Nenhum classificado encontrado.
                 </Alert>
             ) : (
-                <ClassificadoTable
-                    classificados={classificados}
-                    onEdit={handleOpenEdit}
-                    onDelete={handleDelete}
-                />
+                <>
+                    <ClassificadoTable
+                        classificados={classificados}
+                        onEdit={handleOpenEdit}
+                        onDelete={handleDelete}
+                    />
+
+                    <div className="d-flex justify-content-between align-items-center mt-3">
+                        <small className="text-muted">
+                            {totalItems} classificado
+                            {totalItems !== 1 ? 's' : ''}
+                        </small>
+
+                        {totalPages > 1 && (
+                            <Pagination className="mb-0">
+                                <PaginationItem
+                                    disabled={page === 1}
+                                >
+                                    <PaginationLink
+                                        previous
+                                        onClick={() =>
+                                            setPage(
+                                                (current) =>
+                                                    current - 1
+                                            )
+                                        }
+                                    />
+                                </PaginationItem>
+
+                                {Array.from(
+                                    { length: totalPages },
+                                    (_, index) => index + 1
+                                ).map((pageNumber) => (
+                                    <PaginationItem
+                                        key={pageNumber}
+                                        active={
+                                            pageNumber === page
+                                        }
+                                    >
+                                        <PaginationLink
+                                            onClick={() =>
+                                                setPage(
+                                                    pageNumber
+                                                )
+                                            }
+                                        >
+                                            {pageNumber}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                ))}
+
+                                <PaginationItem
+                                    disabled={
+                                        page === totalPages
+                                    }
+                                >
+                                    <PaginationLink
+                                        next
+                                        onClick={() =>
+                                            setPage(
+                                                (current) =>
+                                                    current + 1
+                                            )
+                                        }
+                                    />
+                                </PaginationItem>
+                            </Pagination>
+                        )}
+                    </div>
+                </>
             )}
 
             <ClassificadoForm
