@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Classificado> Classificados => Set<Classificado>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,5 +54,30 @@ public class AppDbContext : DbContext
                     DateTimeKind.Utc)
             }
         );
+
+        modelBuilder.Entity<User>()
+            .HasKey(x => x.Id);
+
+        modelBuilder.Entity<User>()
+            .Property(x => x.Email)
+            .HasMaxLength(256)
+            .IsRequired();
+
+        modelBuilder.Entity<User>()
+            .HasIndex(x => x.Email)
+            .IsUnique();
+
+        modelBuilder.Entity<User>()
+            .Property(x => x.Nome)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        modelBuilder.Entity<User>()
+            .Property(x => x.PasswordHash)
+            .IsRequired();
+
+        modelBuilder.Entity<User>()
+            .Property(x => x.CreatedAt)
+            .IsRequired();
     }
 }

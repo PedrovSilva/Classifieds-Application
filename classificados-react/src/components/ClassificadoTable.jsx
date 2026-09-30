@@ -21,6 +21,7 @@ export default function ClassificadoTable({
     classificados,
     onEdit,
     onDelete,
+    canManage = false,
 }) {
     return (
         <div className="table-responsive mt-4">
@@ -36,9 +37,11 @@ export default function ClassificadoTable({
                         <th>Título</th>
                         <th>Descrição</th>
                         <th>Data de cadastro</th>
-                        <th style={{ width: '180px' }}>
-                            Ações
-                        </th>
+                        {canManage && (
+                            <th style={{ width: '180px' }}>
+                                Ações
+                            </th>
+                        )}
                     </tr>
                 </thead>
 
@@ -61,29 +64,31 @@ export default function ClassificadoTable({
                                 )}
                             </td>
 
-                            <td>
-                                <div className="d-flex gap-2">
-                                    <Button
-                                        color="primary"
-                                        size="sm"
-                                        onClick={() =>
-                                            onEdit(classificado)
-                                        }
-                                    >
-                                        Editar
-                                    </Button>
+                            {canManage && (
+                                <td>
+                                    <div className="d-flex gap-2">
+                                        <Button
+                                            color="primary"
+                                            size="sm"
+                                            onClick={() =>
+                                                onEdit(classificado)
+                                            }
+                                        >
+                                            Editar
+                                        </Button>
 
-                                    <Button
-                                        color="danger"
-                                        size="sm"
-                                        onClick={() =>
-                                            onDelete(classificado)
-                                        }
-                                    >
-                                        Excluir
-                                    </Button>
-                                </div>
-                            </td>
+                                        <Button
+                                            color="danger"
+                                            size="sm"
+                                            onClick={() =>
+                                                onDelete(classificado)
+                                            }
+                                        >
+                                            Excluir
+                                        </Button>
+                                    </div>
+                                </td>
+                            )}
                         </tr>
                     ))}
                 </tbody>

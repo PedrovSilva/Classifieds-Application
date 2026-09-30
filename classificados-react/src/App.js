@@ -14,8 +14,17 @@ import {
 
 import logo from './assets/jornal.png';
 
+import AuthModal from './components/AuthModal';
 import ClassificadoForm from './components/ClassificadoForm';
 import ClassificadoTable from './components/ClassificadoTable';
+
+import {
+    clearStoredAuth,
+    getStoredAuth,
+    login,
+    register,
+    storeAuth,
+} from './services/authApi';
 
 import {
     getClassificados,
@@ -37,9 +46,14 @@ export default function App() {
         useState(null);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [authMode, setAuthMode] = useState('login');
+    const [auth, setAuth] = useState(() => getStoredAuth());
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const isAuthenticated = Boolean(auth?.token);
 
     const fetchClassificados = useCallback(async (currentPage) => {
         try {
@@ -55,8 +69,8 @@ export default function App() {
             setPage(data.page);
             setTotalPages(data.totalPages);
             setTotalItems(data.totalItems);
-        } catch (error) {
-            console.error(error);
+        } catch (fetchError) {
+            console.error(fetchError);
 
             setError(
                 'Não foi possível carregar os classificados.'
@@ -70,12 +84,30 @@ export default function App() {
         fetchClassificados(page);
     }, [page, fetchClassificados]);
 
+    const requireAuth = () => {
+        if (isAuthenticated) {
+            return true;
+        }
+
+        setAuthMode('login');
+        setIsAuthOpen(true);
+        return false;
+    };
+
     const handleOpenCreate = () => {
+        if (!requireAuth()) {
+            return;
+        }
+
         setSelectedClassificado(null);
         setIsFormOpen(true);
     };
 
     const handleOpenEdit = (classificado) => {
+        if (!requireAuth()) {
+            return;
+        }
+
         setSelectedClassificado(classificado);
         setIsFormOpen(true);
     };
@@ -101,8 +133,17 @@ export default function App() {
             await fetchClassificados(page);
 
             handleCloseForm();
-        } catch (error) {
-            console.error(error);
+        } catch (submitError) {
+            console.error(submitError);
+
+            if (submitError?.response?.status === 401) {
+                clearStoredAuth();
+                setAuth(null);
+                setAuthMode('login');
+                setIsAuthOpen(true);
+                setError('Sessão expirada. Faça login novamente.');
+                return;
+            }
 
             setError(
                 selectedClassificado
@@ -110,11 +151,15 @@ export default function App() {
                     : 'Não foi possível criar o classificado.'
             );
 
-            throw error;
+            throw submitError;
         }
     };
 
     const handleDelete = async (classificado) => {
+        if (!requireAuth()) {
+            return;
+        }
+
         const confirmed = window.confirm(
             `Deseja realmente excluir "${classificado.titulo}"?`
         );
@@ -137,13 +182,49 @@ export default function App() {
             }
 
             await fetchClassificados(page);
-        } catch (error) {
-            console.error(error);
+        } catch (deleteError) {
+            console.error(deleteError);
+
+            if (deleteError?.response?.status === 401) {
+                clearStoredAuth();
+                setAuth(null);
+                setAuthMode('login');
+                setIsAuthOpen(true);
+                setError('Sessão expirada. Faça login novamente.');
+                return;
+            }
 
             setError(
                 'Não foi possível excluir o classificado.'
             );
         }
+    };
+
+    const handleAuthSubmit = async ({ mode, nome, email, password }) => {
+        const result =
+            mode === 'login'
+                ? await login({ email, password })
+                : await register({ nome, email, password });
+
+        const nextAuth = {
+            id: result.id,
+            nome: result.nome,
+            email: result.email,
+            token: result.token,
+            expiresAt: result.expiresAt,
+        };
+
+        storeAuth(nextAuth);
+        setAuth(nextAuth);
+        setIsAuthOpen(false);
+        setError(null);
+    };
+
+    const handleLogout = () => {
+        clearStoredAuth();
+        setAuth(null);
+        setIsFormOpen(false);
+        setSelectedClassificado(null);
     };
 
     return (
@@ -157,12 +238,40 @@ export default function App() {
                     className="imagem"
                 />
 
-                <Button
-                    color="success"
-                    onClick={handleOpenCreate}
-                >
-                    + Novo Classificado
-                </Button>
+                <div className="d-flex gap-2 align-items-center">
+                    {isAuthenticated ? (
+                        <>
+                            <small className="text-muted">
+                                Olá, {auth.nome}
+                            </small>
+
+                            <Button
+                                color="outline-secondary"
+                                size="sm"
+                                onClick={handleLogout}
+                            >
+                                Sair
+                            </Button>
+
+                            <Button
+                                color="success"
+                                onClick={handleOpenCreate}
+                            >
+                                + Novo Classificado
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            color="primary"
+                            onClick={() => {
+                                setAuthMode('login');
+                                setIsAuthOpen(true);
+                            }}
+                        >
+                            Entrar
+                        </Button>
+                    )}
+                </div>
             </header>
 
             {error && (
@@ -193,6 +302,7 @@ export default function App() {
                         classificados={classificados}
                         onEdit={handleOpenEdit}
                         onDelete={handleDelete}
+                        canManage={isAuthenticated}
                     />
 
                     <div className="d-flex justify-content-between align-items-center mt-3">
@@ -265,6 +375,14 @@ export default function App() {
                 onClose={handleCloseForm}
                 onSubmit={handleSubmit}
                 classificado={selectedClassificado}
+            />
+
+            <AuthModal
+                isOpen={isAuthOpen}
+                onClose={() => setIsAuthOpen(false)}
+                onSubmit={handleAuthSubmit}
+                mode={authMode}
+                onModeChange={setAuthMode}
             />
         </div>
     );

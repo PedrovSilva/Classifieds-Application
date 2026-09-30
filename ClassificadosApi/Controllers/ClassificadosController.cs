@@ -1,5 +1,6 @@
 ﻿using ClassificadosApi.DTOs;
 using ClassificadosApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClassificadosApi.Controllers;
@@ -15,27 +16,29 @@ public class ClassificadosController : ControllerBase
         _classificadoService = classificadoService;
     }
 
- [HttpGet]
-public async Task<ActionResult<PagedResultDto<ClassificadoResponseDto>>> GetClassificados(
-    [FromQuery] int page = 1,
-    [FromQuery] int pageSize = 10)
-{
-    if (page < 1)
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<ActionResult<PagedResultDto<ClassificadoResponseDto>>> GetClassificados(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        return BadRequest("Page deve ser maior ou igual a 1.");
+        if (page < 1)
+        {
+            return BadRequest("Page deve ser maior ou igual a 1.");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest("PageSize deve estar entre 1 e 100.");
+        }
+
+        var result = await _classificadoService
+            .GetClassificadosByData(page, pageSize);
+
+        return Ok(result);
     }
 
-    if (pageSize < 1 || pageSize > 100)
-    {
-        return BadRequest("PageSize deve estar entre 1 e 100.");
-    }
-
-    var result = await _classificadoService
-        .GetClassificadosByData(page, pageSize);
-
-    return Ok(result);
-}
-
+    [AllowAnonymous]
     [HttpGet("{id:int}", Name = "GetClassificado")]
     public async Task<ActionResult<ClassificadoResponseDto>> GetClassificado(int id)
     {
@@ -48,6 +51,7 @@ public async Task<ActionResult<PagedResultDto<ClassificadoResponseDto>>> GetClas
         return Ok(classificado);
     }
 
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<ClassificadoResponseDto>> Create(
         ClassificadoCreateDto dto)
@@ -61,6 +65,7 @@ public async Task<ActionResult<PagedResultDto<ClassificadoResponseDto>>> GetClas
             classificado);
     }
 
+    [Authorize]
     [HttpPut("{id:int}")]
     public async Task<ActionResult<ClassificadoResponseDto>> Update(
         int id,
@@ -75,6 +80,7 @@ public async Task<ActionResult<PagedResultDto<ClassificadoResponseDto>>> GetClas
         return Ok(classificado);
     }
 
+    [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
