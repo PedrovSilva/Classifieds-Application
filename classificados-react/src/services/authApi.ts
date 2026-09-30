@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { AuthUser, LoginCredentials, RegisterCredentials } from '../types/auth';
 
 const AUTH_STORAGE_KEY = 'classificados_auth';
 
@@ -16,7 +17,7 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-export function getStoredAuth() {
+export function getStoredAuth(): AuthUser | null {
     try {
         const raw = localStorage.getItem(AUTH_STORAGE_KEY);
 
@@ -24,7 +25,7 @@ export function getStoredAuth() {
             return null;
         }
 
-        const auth = JSON.parse(raw);
+        const auth = JSON.parse(raw) as AuthUser;
 
         if (!auth?.token || !auth?.expiresAt) {
             return null;
@@ -42,16 +43,20 @@ export function getStoredAuth() {
     }
 }
 
-export function storeAuth(auth) {
+export function storeAuth(auth: AuthUser): void {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
 }
 
-export function clearStoredAuth() {
+export function clearStoredAuth(): void {
     localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
-export async function register({ nome, email, password }) {
-    const response = await api.post('/auth/register', {
+export async function register({
+    nome,
+    email,
+    password,
+}: RegisterCredentials): Promise<AuthUser> {
+    const response = await api.post<AuthUser>('/auth/register', {
         nome,
         email,
         password,
@@ -60,8 +65,11 @@ export async function register({ nome, email, password }) {
     return response.data;
 }
 
-export async function login({ email, password }) {
-    const response = await api.post('/auth/login', {
+export async function login({
+    email,
+    password,
+}: LoginCredentials): Promise<AuthUser> {
+    const response = await api.post<AuthUser>('/auth/login', {
         email,
         password,
     });

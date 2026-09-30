@@ -2,6 +2,7 @@ import './App.css';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import axios from 'axios';
 
 import {
     Alert,
@@ -33,29 +34,32 @@ import {
     deleteClassificado,
 } from './services/classificadosApi';
 
+import type { AuthMode, AuthSubmitPayload, AuthUser } from './types/auth';
+import type { Classificado, ClassificadoInput } from './types/classificado';
+
 const PAGE_SIZE = 10;
 
 export default function App() {
-    const [classificados, setClassificados] = useState([]);
+    const [classificados, setClassificados] = useState<Classificado[]>([]);
 
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
     const [selectedClassificado, setSelectedClassificado] =
-        useState(null);
+        useState<Classificado | null>(null);
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
-    const [authMode, setAuthMode] = useState('login');
-    const [auth, setAuth] = useState(() => getStoredAuth());
+    const [authMode, setAuthMode] = useState<AuthMode>('login');
+    const [auth, setAuth] = useState<AuthUser | null>(() => getStoredAuth());
 
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     const isAuthenticated = Boolean(auth?.token);
 
-    const fetchClassificados = useCallback(async (currentPage) => {
+    const fetchClassificados = useCallback(async (currentPage: number) => {
         try {
             setLoading(true);
             setError(null);
@@ -84,7 +88,7 @@ export default function App() {
         fetchClassificados(page);
     }, [page, fetchClassificados]);
 
-    const requireAuth = () => {
+    const requireAuth = (): boolean => {
         if (isAuthenticated) {
             return true;
         }
@@ -103,7 +107,7 @@ export default function App() {
         setIsFormOpen(true);
     };
 
-    const handleOpenEdit = (classificado) => {
+    const handleOpenEdit = (classificado: Classificado) => {
         if (!requireAuth()) {
             return;
         }
@@ -117,7 +121,7 @@ export default function App() {
         setSelectedClassificado(null);
     };
 
-    const handleSubmit = async (classificado) => {
+    const handleSubmit = async (classificado: ClassificadoInput) => {
         try {
             setError(null);
 
@@ -133,10 +137,10 @@ export default function App() {
             await fetchClassificados(page);
 
             handleCloseForm();
-        } catch (submitError) {
+        } catch (submitError: unknown) {
             console.error(submitError);
 
-            if (submitError?.response?.status === 401) {
+            if (axios.isAxiosError(submitError) && submitError.response?.status === 401) {
                 clearStoredAuth();
                 setAuth(null);
                 setAuthMode('login');
@@ -155,7 +159,7 @@ export default function App() {
         }
     };
 
-    const handleDelete = async (classificado) => {
+    const handleDelete = async (classificado: Classificado) => {
         if (!requireAuth()) {
             return;
         }
@@ -182,10 +186,10 @@ export default function App() {
             }
 
             await fetchClassificados(page);
-        } catch (deleteError) {
+        } catch (deleteError: unknown) {
             console.error(deleteError);
 
-            if (deleteError?.response?.status === 401) {
+            if (axios.isAxiosError(deleteError) && deleteError.response?.status === 401) {
                 clearStoredAuth();
                 setAuth(null);
                 setAuthMode('login');
@@ -200,13 +204,18 @@ export default function App() {
         }
     };
 
-    const handleAuthSubmit = async ({ mode, nome, email, password }) => {
+    const handleAuthSubmit = async ({
+        mode,
+        nome,
+        email,
+        password,
+    }: AuthSubmitPayload) => {
         const result =
             mode === 'login'
                 ? await login({ email, password })
                 : await register({ nome, email, password });
 
-        const nextAuth = {
+        const nextAuth: AuthUser = {
             id: result.id,
             nome: result.nome,
             email: result.email,
@@ -242,7 +251,7 @@ export default function App() {
                     {isAuthenticated ? (
                         <>
                             <small className="text-muted">
-                                Olá, {auth.nome}
+                                Olá, {auth?.nome}
                             </small>
 
                             <Button
