@@ -1,9 +1,7 @@
-import axios from 'axios';
-
-const baseUrl = `${process.env.REACT_APP_API_URL}/classificados`;
+import api from './authApi';
 
 export async function getClassificados(page = 1, pageSize = 20) {
-    const response = await axios.get(baseUrl, {
+    const response = await api.get('/classificados', {
         params: {
             page,
             pageSize,
@@ -14,13 +12,13 @@ export async function getClassificados(page = 1, pageSize = 20) {
 }
 
 export async function getClassificado(id) {
-    const response = await axios.get(`${baseUrl}/${id}`);
+    const response = await api.get(`/classificados/${id}`);
 
     return response.data;
 }
 
 export async function createClassificado(classificado) {
-    const response = await axios.post(baseUrl, {
+    const response = await api.post('/classificados', {
         titulo: classificado.titulo,
         descricao: classificado.descricao,
     });
@@ -29,7 +27,7 @@ export async function createClassificado(classificado) {
 }
 
 export async function updateClassificado(id, classificado) {
-    const response = await axios.put(`${baseUrl}/${id}`, {
+    const response = await api.put(`/classificados/${id}`, {
         titulo: classificado.titulo,
         descricao: classificado.descricao,
     });
@@ -38,5 +36,5 @@ export async function updateClassificado(id, classificado) {
 }
 
 export async function deleteClassificado(id) {
-    await axios.delete(`${baseUrl}/${id}`);
+    await api.delete(`/classificados/${id}`);
 }

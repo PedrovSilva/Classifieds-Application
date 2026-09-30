@@ -1,6 +1,34 @@
 @ClassificadosApi_HostAddress = http://localhost:5041
 
-GET {{ClassificadosApi_HostAddress}}/weatherforecast/
+### Register
+POST {{ClassificadosApi_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "nome": "Pedro Silva",
+  "email": "pedro@example.com",
+  "password": "senha123"
+}
+
+### Login
+POST {{ClassificadosApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "pedro@example.com",
+  "password": "senha123"
+}
+
+### List classificados (public)
+GET {{ClassificadosApi_HostAddress}}/api/classificados?page=1&pageSize=10
 Accept: application/json
 
-###
+### Create classificado (requires Bearer token)
+POST {{ClassificadosApi_HostAddress}}/api/classificados
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "titulo": "Notebook usado",
+  "descricao": "Notebook em bom estado"
+}
