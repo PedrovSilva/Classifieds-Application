@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Form, Modal } from 'reactstrap';
+import type { Classificado, ClassificadoInput } from '../types/classificado';
 
-const initialForm = {
+interface ClassificadoFormState {
+    titulo: string;
+    descricao: string;
+}
+
+interface ClassificadoFormProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (classificado: ClassificadoInput) => Promise<void>;
+    classificado?: Classificado | null;
+}
+
+const initialForm: ClassificadoFormState = {
     titulo: '',
     descricao: '',
 };
@@ -11,8 +24,8 @@ export default function ClassificadoForm({
     onClose,
     onSubmit,
     classificado = null,
-}) {
-    const [form, setForm] = useState(initialForm);
+}: ClassificadoFormProps) {
+    const [form, setForm] = useState<ClassificadoFormState>(initialForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isEditing = Boolean(classificado);
@@ -28,7 +41,9 @@ export default function ClassificadoForm({
         }
     }, [classificado, isOpen]);
 
-    const handleChange = (event) => {
+    const handleChange = (
+        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
         const { name, value } = event.target;
 
         setForm((current) => ({
@@ -37,7 +52,7 @@ export default function ClassificadoForm({
         }));
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         const titulo = form.titulo.trim();
@@ -130,7 +145,7 @@ export default function ClassificadoForm({
                             id="descricao"
                             name="descricao"
                             className="form-control"
-                            rows="5"
+                            rows={5}
                             value={form.descricao}
                             onChange={handleChange}
                             minLength={3}

@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button, Table } from 'reactstrap';
+import type { Classificado } from '../types/classificado';
 
-function formatarData(dataString) {
+function formatarData(dataString?: string | null): string {
     if (!dataString) {
         return '-';
     }
@@ -17,12 +18,19 @@ function formatarData(dataString) {
     });
 }
 
+interface ClassificadoTableProps {
+    classificados: Classificado[];
+    onEdit: (classificado: Classificado) => void;
+    onDelete: (classificado: Classificado) => void;
+    canManage?: boolean;
+}
+
 export default function ClassificadoTable({
     classificados,
     onEdit,
     onDelete,
     canManage = false,
-}) {
+}: ClassificadoTableProps) {
     return (
         <div className="table-responsive mt-4">
             <Table

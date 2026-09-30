@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Alert, Button, Form, Modal, Nav, NavItem, NavLink } from 'reactstrap';
+import type { AuthMode, AuthSubmitPayload } from '../types/auth';
 
-const initialForm = {
+interface AuthFormState {
+    nome: string;
+    email: string;
+    password: string;
+}
+
+interface AuthModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (payload: AuthSubmitPayload) => Promise<void>;
+    mode?: AuthMode;
+    onModeChange: (mode: AuthMode) => void;
+}
+
+const initialForm: AuthFormState = {
     nome: '',
     email: '',
     password: '',
@@ -13,10 +29,10 @@ export default function AuthModal({
     onSubmit,
     mode = 'login',
     onModeChange,
-}) {
-    const [form, setForm] = useState(initialForm);
+}: AuthModalProps) {
+    const [form, setForm] = useState<AuthFormState>(initialForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     const isLogin = mode === 'login';
 
@@ -28,7 +44,9 @@ export default function AuthModal({
         }
     }, [isOpen, mode]);
 
-    const handleChange = (event) => {
+    const handleChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
         const { name, value } = event.target;
 
         setForm((current) => ({
@@ -37,7 +55,7 @@ export default function AuthModal({
         }));
     };
 
-    const handleSubmit = async (event) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setError(null);
 
@@ -66,17 +84,19 @@ export default function AuthModal({
             });
 
             setForm(initialForm);
-        } catch (submitError) {
-            const message =
-                submitError?.response?.data ||
-                (isLogin
-                    ? 'Não foi possível entrar.'
-                    : 'Não foi possível criar a conta.');
+        } catch (submitError: unknown) {
+            const fallback = isLogin
+                ? 'Não foi possível entrar.'
+                : 'Não foi possível criar a conta.';
+
+            const message = axios.isAxiosError(submitError)
+                ? submitError.response?.data
+                : undefined;
 
             setError(
                 typeof message === 'string'
                     ? message
-                    : 'Não foi possível concluir a autenticação.'
+                    : fallback
             );
         } finally {
             setIsSubmitting(false);
